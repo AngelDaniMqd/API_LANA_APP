@@ -70,3 +70,37 @@ class DeudaResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class PresupuestoBase(BaseModel):
+    categorias_id: int
+    monto_limite: float
+    mes: int
+    ano: int
+
+class PresupuestoCreate(PresupuestoBase):
+    pass
+
+class PresupuestoResponse(PresupuestoBase):
+    id: int
+    usuarios_id: int
+    fecha_creacion: datetime
+    
+    class Config:
+        from_attributes = True
+
+class PagoFijoBase(BaseModel):
+    nombre: str
+    monto: float
+    dia_pago: int
+    activo: int = 1
+
+class PagoFijoCreate(PagoFijoBase):
+    pass
+
+class PagoFijoResponse(PagoFijoBase):
+    id: int
+    usuarios_id: int
+    fecha_creacion: datetime
+    
+    class Config:
+        from_attributes = True

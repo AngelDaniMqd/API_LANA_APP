@@ -25,6 +25,8 @@ class Usuario(Base):
     
     lista_cuentas = relationship("ListaCuenta", back_populates="usuario")
     registros = relationship("Registro", back_populates="usuario")
+    presupuestos = relationship("Presupuesto", back_populates="usuario")
+    pagos_fijos = relationship("PagoFijo", back_populates="usuario")
 
 class Categoria(Base):
     __tablename__ = "categorias"
@@ -33,6 +35,7 @@ class Categoria(Base):
     descripcion = Column(String(45), nullable=False)
     
     subcategorias = relationship("Subcategoria", back_populates="categoria")
+    presupuestos = relationship("Presupuesto", back_populates="categoria")
 
 class Subcategoria(Base):
     __tablename__ = "subcategorias"
@@ -104,6 +107,33 @@ class Estadistica(Base):
     
     registro = relationship("Registro", back_populates="estadisticas")
     deuda = relationship("Deuda", back_populates="estadisticas")
+
+class Presupuesto(Base):
+    __tablename__ = "presupuestos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usuarios_id = Column(Integer, ForeignKey("usuarios.id"))
+    categorias_id = Column(Integer, ForeignKey("categorias.id"))
+    monto_limite = Column(Float, nullable=False)
+    mes = Column(Integer, nullable=False)
+    ano = Column(Integer, nullable=False)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    
+    usuario = relationship("Usuario", back_populates="presupuestos")
+    categoria = relationship("Categoria", back_populates="presupuestos")
+
+class PagoFijo(Base):
+    __tablename__ = "pagos_fijos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usuarios_id = Column(Integer, ForeignKey("usuarios.id"))
+    nombre = Column(String(100), nullable=False)
+    monto = Column(Float, nullable=False)
+    dia_pago = Column(Integer, nullable=False)
+    activo = Column(Integer, default=1)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    
+    usuario = relationship("Usuario", back_populates="pagos_fijos")
 
 def get_db():
     db = SessionLocal()
