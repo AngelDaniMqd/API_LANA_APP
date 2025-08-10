@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from models.database import get_db, Usuario
+from models.database import get_db, Usuario, ListaCuenta, Presupuesto, PagoFijo, Registro
 from models.schemas import UsuarioResponse, Token
 from auth.auth import get_password_hash, verify_password, create_access_token, get_current_user
 from utils.sms import enviar_sms
@@ -139,14 +139,34 @@ def actualizar_usuario(
 
 @router.delete("/{usuario_id}")
 def eliminar_usuario(
-    usuario_id: int, 
+    usuario_id: int,
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
+
+    # 1. Eliminar estadisticas relacionadas a registros del usuario (si existe el modelo Estadistica)
+    from models.database import Estadistica  # Importa solo si tienes este modelo
+    registros_ids = db.query(Registro.id).filter(Registro.usuarios_id == usuario_id).all()
+    registros_ids = [r[0] for r in registros_ids]
+    if registros_ids:
+        db.query(Estadistica).filter(Estadistica.registros_id.in_(registros_ids)).delete(synchronize_session=False)
+
+    # 2. Eliminar registros del usuario
+    db.query(Registro).filter(Registro.usuarios_id == usuario_id).delete(synchronize_session=False)
+
+    # 3. Eliminar presupuestos del usuario
+    db.query(Presupuesto).filter(Presupuesto.usuarios_id == usuario_id).delete(synchronize_session=False)
+
+    # 4. Eliminar pagos fijos del usuario
+    db.query(PagoFijo).filter(PagoFijo.usuarios_id == usuario_id).delete(synchronize_session=False)
+
+    # 5. Eliminar lista_cuentas del usuario
+    db.query(ListaCuenta).filter(ListaCuenta.usuarios_id == usuario_id).delete(synchronize_session=False)
+
+    # 6. Finalmente, eliminar el usuario
     db.delete(usuario)
     db.commit()
     return {"mensaje": "Usuario eliminado exitosamente"}
