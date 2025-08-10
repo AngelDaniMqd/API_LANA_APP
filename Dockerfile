@@ -2,15 +2,19 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copiar requirements.txt primero para aprovechar el cache de Docker
+# Instalar dependencias
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el resto del código
+# Copiar código fuente
 COPY . .
 
-# Puerto que usará la aplicación
-EXPOSE 8000
+# Script de inicio
+COPY start.sh .
+RUN chmod +x start.sh
 
-# Comando para ejecutar la aplicación
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Puerto por defecto (se sobrescribirá con la variable PORT de Railway)
+ENV PORT=8000
+
+# Ejecutar script de inicio
+CMD ["./start.sh"]
