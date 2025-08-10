@@ -84,6 +84,16 @@ def listar_usuarios(current_user: Usuario = Depends(get_current_user), db: Sessi
 
 
 
+@router.get("/{usuario_id}", response_model=UsuarioResponse)
+def obtener_usuario_por_id(
+    usuario_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
 
 
 
