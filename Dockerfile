@@ -2,18 +2,26 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instalar dependencias
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar e instalar requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código fuente
+# Copiar el resto de la aplicación
 COPY . .
+
+# Asegurar permisos del script de inicio
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Variables de entorno para timeouts
-ENV UVICORN_TIMEOUT=300
+# Variables de entorno por defecto
 ENV PORT=8000
+ENV WORKERS=1
+ENV TIMEOUT=75
 
-# Ejecutar script de inicio
+# Comando de inicio
 CMD ["./start.sh"]

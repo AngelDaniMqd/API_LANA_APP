@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import datetime
 
 from routers import usuarios, lista_cuentas, categoria_metodos, categorias, subcategorias, registros, deudas, dashboard, presupuestos, pagos_fijos
 app = FastAPI(
@@ -30,5 +31,8 @@ app.include_router(pagos_fijos.router)
 app.include_router(dashboard.router)
 
 @app.get("/")
-def health_check():
-    return {"status": "healthy"}
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.datetime.now().isoformat()
+    }
