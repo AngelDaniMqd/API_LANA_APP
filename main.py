@@ -28,3 +28,7 @@ app.include_router(deudas.router)
 app.include_router(presupuestos.router)
 app.include_router(pagos_fijos.router)
 app.include_router(dashboard.router)
+
+@app.get("/")
+def health_check():
+    return {"status": "healthy"}
