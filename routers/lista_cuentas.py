@@ -53,19 +53,64 @@ def actualizar_cuenta(
     db.refresh(cuenta)
     return cuenta
 
+
 @router.delete("/{cuenta_id}")
 def eliminar_cuenta(
     cuenta_id: int,
     current_user: Usuario = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    cuenta = db.query(ListaCuenta).filter(
-        ListaCuenta.id == cuenta_id,
-        ListaCuenta.usuarios_id == current_user.id
-    ).first()
+    # 1) Verifica propiedad de la cuenta
+    cuenta = (
+        db.query(ListaCuenta)
+        .filter(ListaCuenta.id == cuenta_id, ListaCuenta.usuarios_id == current_user.id)
+        .first()
+    )
     if not cuenta:
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
-    
-    db.delete(cuenta)
-    db.commit()
-    return {"mensaje": "Cuenta eliminada exitosamente"}
+
+    try:
+        # 2) Busca los registros ligados a esta cuenta (del mismo usuario)
+        reg_ids = [
+            r[0] if isinstance(r, tuple) else r.id
+            for r in db.query(Registro.id)
+            .filter(
+                Registro.lista_cuentas_id == cuenta_id,
+                Registro.usuarios_id == current_user.id,
+            )
+            .all()
+        ]
+
+        # 3) Borra estadisticas que referencian esos registros
+        deleted_stats = 0
+        if reg_ids:
+            deleted_stats = (
+                db.query(Estadistica)
+                .filter(Estadistica.registros_id.in_(reg_ids))
+                .delete(synchronize_session=False)
+            )
+
+        # 4) Borra los registros de la cuenta
+        deleted_regs = (
+            db.query(Registro)
+            .filter(
+                Registro.lista_cuentas_id == cuenta_id,
+                Registro.usuarios_id == current_user.id,
+            )
+            .delete(synchronize_session=False)
+        )
+
+        # 5) Borra la cuenta
+        db.delete(cuenta)
+        db.commit()
+
+        return {
+            "mensaje": "Cuenta y datos relacionados eliminados exitosamente",
+            "eliminados": {
+                "registros": int(deleted_regs),
+                "estadisticas": int(deleted_stats),
+            },
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al eliminar la cuenta: {e}")
