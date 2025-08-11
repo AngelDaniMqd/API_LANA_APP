@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 
-from routers import usuarios, lista_cuentas, categoria_metodos, categorias, subcategorias, registros, deudas, dashboard, presupuestos, pagos_fijos
+from routers import usuarios, lista_cuentas, categoria_metodos, categorias, subcategorias, registros, deudas, dashboard, presupuestos, pagos_fijos, objetivos
 app = FastAPI(
     title="Lana App API",
     description="API para control de finanzas personales",
@@ -29,6 +29,7 @@ app.include_router(deudas.router)
 app.include_router(presupuestos.router)
 app.include_router(pagos_fijos.router)
 app.include_router(dashboard.router)
+app.include_router(objetivos.router)
 
 @app.get("/")
 async def health_check():
