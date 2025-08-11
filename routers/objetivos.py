@@ -218,7 +218,7 @@ def crear_aporte(
         nota=data.nota,
         fecha=datetime.utcnow(),
     )
-    obj.monto_ahorrado = (obj.monto_ahorrado or 0) + float(data.monto)
+   
     obj.fecha_actualizacion = datetime.utcnow()
 
     db.add(ap)
