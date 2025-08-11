@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
+# arriba del archivo:
+from models.database import get_db, ListaCuenta, Usuario, Registro, Estadistica
 
 from models.database import get_db, ListaCuenta, Usuario
 from models.schemas import ListaCuentaResponse
@@ -53,14 +55,12 @@ def actualizar_cuenta(
     db.refresh(cuenta)
     return cuenta
 
-
 @router.delete("/{cuenta_id}")
 def eliminar_cuenta(
     cuenta_id: int,
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # 1) Verifica propiedad de la cuenta
     cuenta = (
         db.query(ListaCuenta)
         .filter(ListaCuenta.id == cuenta_id, ListaCuenta.usuarios_id == current_user.id)
@@ -70,46 +70,30 @@ def eliminar_cuenta(
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
 
     try:
-        # 2) Busca los registros ligados a esta cuenta (del mismo usuario)
         reg_ids = [
-            r[0] if isinstance(r, tuple) else r.id
-            for r in db.query(Registro.id)
-            .filter(
+            r.id for r in db.query(Registro.id).filter(
                 Registro.lista_cuentas_id == cuenta_id,
                 Registro.usuarios_id == current_user.id,
-            )
-            .all()
+            ).all()
         ]
 
-        # 3) Borra estadisticas que referencian esos registros
         deleted_stats = 0
         if reg_ids:
-            deleted_stats = (
-                db.query(Estadistica)
-                .filter(Estadistica.registros_id.in_(reg_ids))
-                .delete(synchronize_session=False)
-            )
+            deleted_stats = db.query(Estadistica).filter(
+                Estadistica.registros_id.in_(reg_ids)
+            ).delete(synchronize_session=False)
 
-        # 4) Borra los registros de la cuenta
-        deleted_regs = (
-            db.query(Registro)
-            .filter(
-                Registro.lista_cuentas_id == cuenta_id,
-                Registro.usuarios_id == current_user.id,
-            )
-            .delete(synchronize_session=False)
-        )
+        deleted_regs = db.query(Registro).filter(
+            Registro.lista_cuentas_id == cuenta_id,
+            Registro.usuarios_id == current_user.id,
+        ).delete(synchronize_session=False)
 
-        # 5) Borra la cuenta
         db.delete(cuenta)
         db.commit()
 
         return {
             "mensaje": "Cuenta y datos relacionados eliminados exitosamente",
-            "eliminados": {
-                "registros": int(deleted_regs),
-                "estadisticas": int(deleted_stats),
-            },
+            "eliminados": {"registros": int(deleted_regs), "estadisticas": int(deleted_stats)},
         }
     except Exception as e:
         db.rollback()
