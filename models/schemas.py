@@ -61,13 +61,14 @@ class RegistroResponse(BaseModel):
 
 class DeudaResponse(BaseModel):
     id: int
+    usuarios_id: int
     nombre: str
-    monto: str
+    monto: float
     fecha_inicio: datetime
     fecha_vencimiento: datetime
     descripcion: str
     categori_metodos_id: Optional[int] = None
-    
+
     class Config:
         from_attributes = True
 
