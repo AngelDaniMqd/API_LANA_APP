@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Float, func, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Float, func, Text, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
@@ -109,20 +109,27 @@ class Estadistica(Base):
     registro = relationship("Registro", back_populates="estadisticas")
     deuda = relationship("Deuda", back_populates="estadisticas")
 
+
 class Presupuesto(Base):
     __tablename__ = "presupuestos"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    usuarios_id = Column(Integer, ForeignKey("usuarios.id"))
-    categorias_id = Column(Integer, ForeignKey("categorias.id"))
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    usuarios_id = Column(Integer, ForeignKey("usuarios.id"), index=True, nullable=True)
+    categorias_id = Column(Integer, ForeignKey("categorias.id"), index=True, nullable=True)
     monto_limite = Column(Float, nullable=False)
-    mes = Column(Integer, nullable=False)
-    ano = Column(Integer, nullable=False)
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    
+
+    # NUEVO: estado (activo | inactivo), sin mes/ano
+    estado = Column(
+        Enum("activo", "inactivo", name="estado_presupuesto"),
+        nullable=False,
+        server_default="activo",
+    )
+
+    fecha_creacion = Column(DateTime, nullable=True, server_default=func.now())
+
+    # Relaciones
     usuario = relationship("Usuario", back_populates="presupuestos")
     categoria = relationship("Categoria", back_populates="presupuestos")
-
 class PagoFijo(Base):
     __tablename__ = "pagos_fijos"
     
