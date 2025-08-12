@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-
+from typing import Optional
 class UsuarioResponse(BaseModel):
     id: int
     nombre: str
@@ -54,7 +54,7 @@ class RegistroResponse(BaseModel):
     subCategorias_id: int
     monto: str
     fecha_registro: datetime
-    categori_metodos_id: int
+    categori_metodos_id: Optional[int] = None
     
     class Config:
         from_attributes = True
@@ -66,7 +66,7 @@ class DeudaResponse(BaseModel):
     fecha_inicio: datetime
     fecha_vencimiento: datetime
     descripcion: str
-    categori_metodos_id: int
+    categori_metodos_id: Optional[int] = None
     
     class Config:
         from_attributes = True
